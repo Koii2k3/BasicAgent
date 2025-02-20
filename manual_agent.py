@@ -27,12 +27,13 @@ class Agent():
 
     def __call__(self, message):
         self.messages.append({"role": "user", "content": message})
-        result = self.respond(message)
+        result = self.respond()
         self.messages.append({"role": "assistant", "content": result})
         return result
 
-    def respond(self, message):
-        completion = gemini_model.generate_content(message)
+    def respond(self):
+        history = "\n".join([f"{m['role']}: {m['content']}" for m in self.messages])
+        completion = gemini_model.generate_content(history)
         return completion.text
 
 
@@ -40,10 +41,11 @@ if __name__ == "__main__":
     action_re = re.compile(r"^\*\*Action\*\*:\s*(\w+):\s*(.*)$")
     agent = Agent()
     
-    MAX_TURNS = 3
+    MAX_TURNS = 5
     turn_counter = 0
     
     user_message = "Can you find the most important keywords in this sentence: 'Machine learning is a branch of artificial intelligence that enables computers to learn from data without explicit programming' and define the word with the most complex meaning?"
+    print(f"User: {user_message}")
     next_prompt = user_message
     
     while turn_counter < MAX_TURNS:
@@ -63,7 +65,7 @@ if __name__ == "__main__":
             if action not in known_actions:
                 raise Exception(f"Unknown action: {action}")
             
-            print(f">>>>> Call Action: {action} with paras: {paras}")
+            print(f">>>>> Call Action: {action}, with paras: {paras}")
             observation = known_actions[action](paras)
             
             next_prompt = f"**Observation:** {observation}"
